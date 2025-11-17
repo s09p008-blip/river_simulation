@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>実習15 生活排水の流入による河川への影響 - シミュレーション（タブレット対応版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #e5e7eb;
+      --card-bg: #f9fafb;
+      --border-soft: #e5e7eb;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-orange: #f97316;
+      --accent-purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .app {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    .left {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 280px;
+      max-width: 360px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      font-size: 1.15rem;
+      color: #1e40af;
+    }
+
+    h2 {
+      font-size: 1rem;
+    }
+
+    h3 {
+      font-size: 0.95rem;
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .small {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+    }
+
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      background: #e5f0ff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .status-label.active {
+      background: #dbeafe;
+      color: #1e40af;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .demo-notice {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 2px solid #fbbf24;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #92400e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .canvas-wrapper {
+      flex: 1;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+      background: #eff6ff;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    #simCanvas {
+      height: 280px;
+    }
+
+    #graphCanvas {
+      height: 240px;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .control-group {
+      margin-bottom: 10px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .slider-label span:first-child {
+      font-weight: 600;
+    }
+
+    .slider-label span:last-child {
+      color: var(--accent-blue);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #2563eb;
+      box-shadow: 0 0 0 6px rgba(59,130,246,0.3);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      border: none;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.25);
+      cursor: pointer;
+    }
+
+    label.checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .legend-river {
+      margin-top: 6px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      background: var(--accent-blue);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+    }
+
+    button.secondary {
+      background: white;
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+      border: 1px solid #e5e7eb;
+    }
+
+    button.secondary:hover {
+      background: #f9fafb;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step {
+      background: #f0f9ff;
+      border-left: 3px solid #3b82f6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background: #3b82f6;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      margin-right: 8px;
+    }
+
+    .step-title {
+      font-weight: 600;
+      color: #1e40af;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .step-action {
+      color: var(--text-sub);
+      font-size: 0.75rem;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    ul li {
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    /* ====== タブレット・スマホ向けレイアウト調整 ====== */
+    @media (max-width: 1024px) {
+      .app {
+        flex-direction: column;
+        height: auto;
+      }
+      .right {
+        max-width: none;
+        min-width: 0;
+      }
+      .card {
+        padding: 10px 12px;
+      }
+      #simCanvas {
+        height: 260px;
+      }
+      #graphCanvas {
+        height: 220px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sim-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      h1 {
+        font-size: 1rem;
+      }
+      .subtitle {
+        font-size: 0.75rem;
+      }
+      input[type="range"] {
+        height: 8px;
+      }
+      button {
+        font-size: 0.85rem;
+        padding: 10px 14px;
+        width: 100%;
+      }
+      .btn-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="left">
+      <div class="card" style="flex: 1;">
+        <div class="sim-header">
+          <div>
+            <h1>📚 実習15: 生活排水の流入による河川への影響</h1>
+            <p class="subtitle">
+              上流から下流へ流れる川に生活排水が流入したとき、生物と物質がどう変化するかを観察しましょう。<br>
+              教科書p.155図1・図2と比較しながら、4つの要素の関係を考えます。
+            </p>
+          </div>
+          <span id="statusLabel" class="status-label">準備中</span>
+        </div>
+        <div id="demoNotice" class="demo-notice" style="display: none;">
+          <span style="font-size: 1.2rem;">💡</span>
+          <span><strong>起動デモ実行中:</strong> 汚水が流入して汚染が進行する様子を観察してください</span>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="simCanvas"></canvas>
+        </div>
+        <!-- 川の中の棒グラフ用の凡例 -->
+        <div class="legend legend-river">
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-orange);"></span>
+            <span>有機物（汚水の栄養分）</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-purple);"></span>
+            <span>細菌（有機物を分解）</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-green);"></span>
+            <span>藻類（緑藻・シアノバクテリア）</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-blue);"></span>
+            <span>溶存酸素（DO）</span>
+          </div>
+        </div>
+        <div class="hint">
+          <strong>観察ポイント:</strong> 川は左が上流、右が下流です。
+          「上流」「排出口付近」「中流」「下流」の4地点で、4色のバーの高さと、
+          オレンジ色の粒（汚水中の有機物）がどう流れていくかに注目しましょう。
+        </div>
+      </div>
+
+      <div class="card" style="height: 280px;">
+        <div class="sim-header">
+          <div>
+            <h2>📊 河川の変化のグラフ (教科書p.155 図2に対応)</h2>
+            <p class="subtitle">横軸:川の位置(上流→下流) / 縦軸:それぞれの量(相対値)</p>
+          </div>
+        </div>
+        <canvas id="graphCanvas"></canvas>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-orange);"></span>
+            <span>有機物 (汚水に含まれる栄養分)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-purple);"></span>
+            <span>細菌 (有機物を分解)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-green);"></span>
+            <span>藻類 (緑藻・シアノバクテリア)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color" style="background: var(--accent-blue);"></span>
+            <span>溶存酸素 (DO)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="card">
+        <h2>📝 実習の手順</h2>
+        <div class="steps">
+          <div class="step">
+            <span class="step-number">①</span>
+            <span class="step-title">有機物に着目</span>
+            <span class="step-action">→「生活排水の濃さ」を変えて、有機物の量と汚れの広がりを調整</span>
+          </div>
+          <div class="step">
+            <span class="step-number">②</span>
+            <span class="step-title">4要素の関係を観察</span>
+            <span class="step-action">→ グラフで4色の線の重なりを見て、ワークシートの考察1〜3に答える</span>
+          </div>
+          <div class="step">
+            <span class="step-number">③</span>
+            <span class="step-action">→ 家庭でできる工夫や自分たちの生活と結びつけて考察4・5をまとめる</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎮 操作パネル</h2>
+
+        <div class="control-group">
+          <div class="slider-label">
+            <span>生活排水の濃さ</span>
+            <span id="organicLabel"></span>
+          </div>
+          <input id="organicSlider" type="range" min="0" max="100" value="10">
+          <p class="small">
+            汚水に含まれる有機物の量。値が大きいほど汚染がひどくなり、オレンジの粒が増えます。
+          </p>
+        </div>
+
+        <div class="control-group">
+          <div class="slider-label">
+            <span>川の流れの速さ</span>
+            <span id="flowLabel"></span>
+          </div>
+          <input id="flowSlider" type="range" min="0" max="100" value="50">
+          <p class="small">
+            流れが速いと、汚れの影響がより下流まで広がります。
+          </p>
+        </div>
+
+        <div class="control-group">
+          <div class="slider-label">
+            <span>自浄作用の強さ</span>
+            <span id="purifyLabel"></span>
+          </div>
+          <input id="purifySlider" type="range" min="0" max="100" value="60">
+          <p class="small">
+            川が自然にきれいになろうとする力。強いと、オレンジの粒が途中で減りやすくなります。
+          </p>
+        </div>
+
+        <div class="control-group">
+          <span class="small" style="font-weight: 600; margin-bottom: 6px; display: block;">グラフ表示:</span>
+          <label class="checkbox-row">
+            <input type="checkbox" id="showOrganic" checked>
+            <span>有機物</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="showBacteria" checked>
+            <span>細菌</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="showAlgae" checked>
+            <span>藻類</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="showOxygen" checked>
+            <span>溶存酸素</span>
+          </label>
+        </div>
+
+        <div class="btn-row">
+          <button id="resetButton">
+            ⟳ リセット
+          </button>
+          <button id="demoButton" class="secondary">
+            ▶ 変化を見る
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function () {
+      const simCanvas = document.getElementById('simCanvas');
+      const graphCanvas = document.getElementById('graphCanvas');
+      const simCtx = simCanvas.getContext('2d');
+      const graphCtx = graphCanvas.getContext('2d');
+
+      const organicSlider = document.getElementById('organicSlider');
+      const flowSlider = document.getElementById('flowSlider');
+      const purifySlider = document.getElementById('purifySlider');
+      const organicLabel = document.getElementById('organicLabel');
+      const flowLabel = document.getElementById('flowLabel');
+      const purifyLabel = document.getElementById('purifyLabel');
+      const statusLabel = document.getElementById('statusLabel');
+      const resetButton = document.getElementById('resetButton');
+      const demoButton = document.getElementById('demoButton');
+      const demoNotice = document.getElementById('demoNotice');
+
+      const showOrganicCheckbox = document.getElementById('showOrganic');
+      const showBacteriaCheckbox = document.getElementById('showBacteria');
+      const showAlgaeCheckbox = document.getElementById('showAlgae');
+      const showOxygenCheckbox = document.getElementById('showOxygen');
+
+      const N = 80;
+      const pos = [];
+      for (let i = 0; i < N; i++) {
+        pos[i] = i / (N - 1);
+      }
+
+      const params = {
+        organicIntensity: 0.1,
+        flowSpeed: 1.0,
+        purification: 1.3,
+        showOrganic: true,
+        showBacteria: true,
+        showAlgae: true,
+        showOxygen: true,
+        paused: false,
+        smooth: true
+      };
+
+      function createField() {
+        return {
+          organic: new Array(N).fill(0.05),
+          bacteria: new Array(N).fill(0.05),
+          algae: new Array(N).fill(0.1),
+          oxygen: new Array(N).fill(1.0)
+        };
+      }
+
+      const state = createField();
+      const target = createField();
+      const outletX = 0.25;
+
+      // 汚水（有機物）の粒アニメーション用
+      const PARTICLE_COUNT = 60;
+      const particles = [];
+
+      function resetParticle(p) {
+        p.x = outletX + (Math.random() - 0.2) * 0.05; // 排出口付近からスタート
+        p.y = 0.25 + Math.random() * 0.5;            // 川の中ほど
+        p.life = 0.5 + Math.random() * 1.0;
+      }
+
+      function initParticles() {
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const p = { x: 0, y: 0, life: 1.0 };
+          resetParticle(p);
+          // 少し左にばらしておく
+          p.x -= Math.random() * 0.3;
+          particles.push(p);
+        }
+      }
+
+      function updateParticles(dt) {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const speedBase = 0.1 + params.flowSpeed * 0.12; // 川の速さで変化
+          p.x += speedBase * dt;
+          // 自浄作用が強いほど寿命が短い（途中で消える）
+          const lifeDecay = 0.05 + params.purification * 0.03;
+          p.life -= lifeDecay * dt;
+
+          if (p.x > 1.05 || p.life <= 0) {
+            resetParticle(p);
+          }
+        }
+      }
+
+      function computeTarget() {
+        const O0 = 0.05;
+        const B0 = 0.05;
+        const A0 = 0.1;
+        const D0 = 1.0;
+
+        for (let i = 0; i < N; i++) {
+          const x = pos[i];
+
+          let organicVal = O0;
+          let bacteriaVal = B0;
+          let algaeVal = A0;
+          let oxygenVal = D0;
+
+          if (x >= outletX) {
+            const dx = x - outletX;
+            const fIn = params.organicIntensity * 2.0;
+            const fFlow = params.flowSpeed;      // 0.5〜2.0
+            const fPurify = params.purification; // 0.5〜2.0
+
+            // 川の流れが速いほど「同じ距離でも汚れが残りやすい」イメージ
+            const dxFlow = dx / fFlow;
+
+            // 有機物：排出口で最大、その後自浄作用とともに減少
+            const oDecay = Math.exp(-fPurify * dxFlow * 8);
+            organicVal = O0 + fIn * oDecay;
+
+            // 細菌：排出口付近でピーク、その後自浄作用で減少
+            const bPeak = fIn * 0.7;
+            const bDecay = Math.exp(-fPurify * dxFlow * 10);
+            bacteriaVal = B0 + bPeak * bDecay;
+
+            // 溶存酸素：最初は細菌の呼吸で減少、その後自浄作用＋藻類の光合成で回復
+            const dDrop = fIn * 1.0;
+            const dRecover = 0.7;
+            oxygenVal = D0 - dDrop * Math.exp(-dxFlow * 3) + dRecover * (1 - Math.exp(-dxFlow * 6));
+            oxygenVal = Math.max(0.05, oxygenVal);
+
+            // 藻類：少し下流でピーク（無機栄養塩＋光合成）
+            if (dxFlow > 0.05) {
+              const basePeakPos = 0.25;
+              const aPeakPos = basePeakPos + 0.15 * (fFlow - 1.0); // 流れが速いとピークがより下流へ
+              const aWidth = 0.22;
+              const aPeak = fIn * 0.6;
+              const aVal = aPeak * Math.exp(-Math.pow((dxFlow - aPeakPos) / aWidth, 2));
+              algaeVal = A0 + aVal;
+            }
+          }
+
+          target.organic[i] = Math.max(0, Math.min(1.2, organicVal));
+          target.bacteria[i] = Math.max(0, Math.min(1.2, bacteriaVal));
+          target.algae[i]   = Math.max(0, Math.min(1.2, algaeVal));
+          target.oxygen[i]  = Math.max(0.05, Math.min(1.2, oxygenVal));
+        }
+      }
+
+      function resizeCanvases() {
+        const dpr = window.devicePixelRatio || 1;
+        [[simCanvas, simCtx], [graphCanvas, graphCtx]].forEach(([canvas, ctx]) => {
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = rect.width * dpr;
+          canvas.height = rect.height * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        });
+      }
+
+      window.addEventListener('resize', resizeCanvases);
+
+      let lastTime = 0;
+
+      function update(dt) {
+        if (params.paused) {
+          updateParticles(dt);
+          return;
+        }
+
+        const smoothStrength = params.smooth ? 5.0 : 15.0;
+        const alpha = 1 - Math.exp(-smoothStrength * dt);
+
+        const keys = ['organic', 'bacteria', 'algae', 'oxygen'];
+        for (const key of keys) {
+          const sArr = state[key];
+          const tArr = target[key];
+          for (let i = 0; i < N; i++) {
+            sArr[i] += (tArr[i] - sArr[i]) * alpha;
+          }
+        }
+
+        updateParticles(dt);
+
+        let isEquilibrium = true;
+        for (const key of keys) {
+          for (let i = 0; i < N; i++) {
+            if (Math.abs(state[key][i] - target[key][i]) > 0.01) {
+              isEquilibrium = false;
+              break;
+            }
+          }
+          if (!isEquilibrium) break;
+        }
+
+        if (isEquilibrium) {
+          statusLabel.textContent = '平衡状態';
+          statusLabel.classList.remove('active');
+        } else {
+          statusLabel.textContent = '変化中...';
+          statusLabel.classList.add('active');
+        }
+      }
+
+      function drawRoundedRect(ctx, x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + w - radius, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+        ctx.lineTo(x + w, y + h - radius);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+        ctx.lineTo(x + radius, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+
+      function drawSim() {
+        const ctx = simCtx;
+        const width = simCanvas.clientWidth;
+        const height = simCanvas.clientHeight;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const marginLeft = 40;
+        const marginRight = 24;
+        const riverTop = height * 0.32;
+        const riverHeight = height * 0.34;
+        const riverWidth = width - marginLeft - marginRight;
+
+        // 川本体
+        drawRoundedRect(ctx, marginLeft, riverTop, riverWidth, riverHeight, 18);
+        const grad = ctx.createLinearGradient(marginLeft, riverTop, marginLeft, riverTop + riverHeight);
+        grad.addColorStop(0, '#dbeafe');
+        grad.addColorStop(1, '#bfdbfe');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.strokeStyle = '#93c5fd';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 川の流れ矢印
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2;
+        const arrowY = riverTop + riverHeight * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(marginLeft + riverWidth * 0.2, arrowY);
+        ctx.lineTo(marginLeft + riverWidth * 0.8, arrowY);
+        ctx.stroke();
+        const ax = marginLeft + riverWidth * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(ax, arrowY);
+        ctx.lineTo(ax - 10, arrowY - 5);
+        ctx.lineTo(ax - 10, arrowY + 5);
+        ctx.closePath();
+        ctx.fillStyle = '#2563eb';
+        ctx.fill();
+
+        // 排出口
+        const outletScreenX = marginLeft + riverWidth * outletX;
+        const outletY = riverTop - 10;
+        ctx.fillStyle = '#4b5563';
+        drawRoundedRect(ctx, outletScreenX - 16, outletY - 10, 32, 20, 6);
+        ctx.fill();
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillRect(outletScreenX - 10, outletY - 5, 20, 10);
+
+        ctx.fillStyle = '#374151';
+        ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+        ctx.fillText('汚水の排出口', outletScreenX - 26, outletY - 14);
+
+        // 汚水の粒（有機物）を描画
+        ctx.save();
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          if (p.x < 0 || p.x > 1.05) continue;
+          const px = marginLeft + p.x * riverWidth;
+          const py = riverTop + p.y * riverHeight;
+          const idx = Math.max(0, Math.min(N - 1, Math.round(p.x * (N - 1))));
+          const organicVal = Math.min(1.2, state.organic[idx]);
+          const alpha = 0.3 + Math.min(0.6, organicVal);
+          ctx.fillStyle = 'rgba(249, 115, 22,' + alpha + ')';
+          ctx.beginPath();
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // 4地点での棒グラフ
+        const labels = ['上流', '排出口付近', '中流', '下流'];
+        const sampleXs = [0.08, outletX, 0.55, 0.9];
+        const baseY = riverTop + riverHeight - 10;
+        const maxBarHeight = riverHeight - 26;
+        const barGroupWidth = 40;
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let j = 0; j < sampleXs.length; j++) {
+          const px = marginLeft + riverWidth * sampleXs[j];
+          const idx = Math.max(0, Math.min(N - 1, Math.round(sampleXs[j] * (N - 1))));
+          const organicVal = Math.min(1.2, state.organic[idx]) / 1.2;
+          const bacteriaVal = Math.min(1.2, state.bacteria[idx]) / 1.2;
+          const algaeVal = Math.min(1.2, state.algae[idx]) / 1.2;
+          const oxygenVal = Math.min(1.2, state.oxygen[idx]) / 1.2;
+
+          const barWidth = barGroupWidth / 4;
+          const gap = 2;
+
+          // 有機物
+          ctx.fillStyle = 'rgba(249, 115, 22, 0.9)';
+          const hO = maxBarHeight * organicVal;
+          ctx.fillRect(px - barGroupWidth / 2, baseY - hO, barWidth, hO);
+
+          // 細菌
+          ctx.fillStyle = 'rgba(168, 85, 247, 0.9)';
+          const hB = maxBarHeight * bacteriaVal;
+          ctx.fillRect(px - barGroupWidth / 2 + barWidth + gap, baseY - hB, barWidth, hB);
+
+          // 藻類
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+          const hA = maxBarHeight * algaeVal;
+          ctx.fillRect(px - barGroupWidth / 2 + 2 * (barWidth + gap), baseY - hA, barWidth, hA);
+
+          // 溶存酸素
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.9)';
+          const hD = maxBarHeight * oxygenVal;
+          ctx.fillRect(px - barGroupWidth / 2 + 3 * (barWidth + gap), baseY - hD, barWidth, hD);
+
+          ctx.fillStyle = '#111827';
+          ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+          ctx.fillText(labels[j], px, baseY + 4);
+        }
+      }
+
+      function drawGraph() {
+        const ctx = graphCtx;
+        const width = graphCanvas.clientWidth;
+        const height = graphCanvas.clientHeight;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const margin = { left: 40, right: 16, top: 12, bottom: 28 };
+        const plotW = width - margin.left - margin.right;
+        const plotH = height - margin.top - margin.bottom;
+
+        ctx.strokeStyle = '#d1d5db';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, margin.top);
+        ctx.lineTo(margin.left, margin.top + plotH);
+        ctx.lineTo(margin.left + plotW, margin.top + plotH);
+        ctx.stroke();
+
+        ctx.font = '10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+
+        const xLabels = [
+          { x: 0.0, text: '上流' },
+          { x: outletX, text: '排出口' },
+          { x: 0.55, text: '中流' },
+          { x: 1.0, text: '下流' }
+        ];
+
+        for (let k = 0; k < xLabels.length; k++) {
+          const tick = xLabels[k];
+          const tx = margin.left + plotW * tick.x;
+          ctx.beginPath();
+          ctx.moveTo(tx, margin.top + plotH);
+          ctx.lineTo(tx, margin.top + plotH + 4);
+          ctx.stroke();
+          ctx.fillText(tick.text, tx, margin.top + plotH + 6);
+        }
+
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let i = 1; i <= 4; i++) {
+          const v = i / 5;
+          const y = margin.top + (1 - v) * plotH;
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(margin.left + plotW, y);
+          ctx.stroke();
+        }
+
+        function drawLine(data, color) {
+          ctx.beginPath();
+          for (let i = 0; i < N; i++) {
+            const x = margin.left + pos[i] * plotW;
+            const v = Math.min(1.2, data[i]) / 1.2;
+            const y = margin.top + (1 - v) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+
+        if (params.showOrganic) {
+          drawLine(state.organic, '#f97316');
+        }
+        if (params.showBacteria) {
+          drawLine(state.bacteria, '#a855f7');
+        }
+        if (params.showAlgae) {
+          drawLine(state.algae, '#10b981');
+        }
+        if (params.showOxygen) {
+          drawLine(state.oxygen, '#3b82f6');
+        }
+      }
+
+      function updateParamsFromUI() {
+        params.organicIntensity = organicSlider.value / 100;
+        params.flowSpeed = 0.5 + (flowSlider.value / 100) * 1.5;
+        params.purification = 0.5 + (purifySlider.value / 100) * 1.5;
+
+        organicLabel.textContent = Math.round(params.organicIntensity * 100) + '%';
+        const flowTxt = flowSlider.value < 30 ? '遅い' :
+          (flowSlider.value > 70 ? '速い' : 'ふつう');
+        const purifyTxt = purifySlider.value < 30 ? '弱い' :
+          (purifySlider.value > 70 ? '強い' : '中くらい');
+
+        flowLabel.textContent = flowTxt;
+        purifyLabel.textContent = purifyTxt;
+
+        params.showOrganic = showOrganicCheckbox.checked;
+        params.showBacteria = showBacteriaCheckbox.checked;
+        params.showAlgae = showAlgaeCheckbox.checked;
+        params.showOxygen = showOxygenCheckbox.checked;
+
+        computeTarget();
+      }
+
+      organicSlider.addEventListener('input', updateParamsFromUI);
+      flowSlider.addEventListener('input', updateParamsFromUI);
+      purifySlider.addEventListener('input', updateParamsFromUI);
+
+      showOrganicCheckbox.addEventListener('change', updateParamsFromUI);
+      showBacteriaCheckbox.addEventListener('change', updateParamsFromUI);
+      showAlgaeCheckbox.addEventListener('change', updateParamsFromUI);
+      showOxygenCheckbox.addEventListener('change', updateParamsFromUI);
+
+      resetButton.addEventListener('click', function () {
+        organicSlider.value = 10;
+        flowSlider.value = 50;
+        purifySlider.value = 60;
+        showOrganicCheckbox.checked = true;
+        showBacteriaCheckbox.checked = true;
+        showAlgaeCheckbox.checked = true;
+        showOxygenCheckbox.checked = true;
+        updateParamsFromUI();
+      });
+
+      demoButton.addEventListener('click', function () {
+        demoNotice.style.display = 'flex';
+        organicSlider.value = 5;
+        updateParamsFromUI();
+
+        setTimeout(() => {
+          organicSlider.value = 75;
+          updateParamsFromUI();
+        }, 2000);
+
+        setTimeout(() => {
+          demoNotice.style.display = 'none';
+        }, 8000);
+      });
+
+      resizeCanvases();
+      updateParamsFromUI();
+      initParticles();
+
+      setTimeout(() => {
+        statusLabel.textContent = '起動デモ開始';
+        statusLabel.classList.add('active');
+        demoNotice.style.display = 'flex';
+        organicSlider.value = 70;
+        updateParamsFromUI();
+
+        setTimeout(() => {
+          demoNotice.style.display = 'none';
+        }, 6000);
+      }, 1000);
+
+      function loop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+        lastTime = timestamp;
+
+        update(dt);
+        drawSim();
+        drawGraph();
+
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    });
+  </script>
+</body>
+</html>
